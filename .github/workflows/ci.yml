@@ -20,7 +20,19 @@ jobs:
         run: docker run -d -p 8000:8000 --name reco-container reco-api
 
       - name: Wait for API
-        run: sleep 10
+        run: |
+          echo "Waiting for API to start..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+              echo "API is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/30 - waiting 5s..."
+            sleep 5
+          done
+          echo "API failed to start"
+          docker logs reco-container
+          exit 1
 
       - name: Test health endpoint
         run: curl --fail http://localhost:8000/health
