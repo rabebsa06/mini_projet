@@ -1,0 +1,37 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t reco-api .
+
+      - name: Run container
+        run: docker run -d -p 8000:8000 --name reco-container reco-api
+
+      - name: Wait for API
+        run: sleep 10
+
+      - name: Test health endpoint
+        run: curl --fail http://localhost:8000/health
+
+      - name: Test custom recommendation
+        run: |
+          curl --fail "http://localhost:8000/recommend/custom/1?k=5"
+
+      - name: Test surprise recommendation
+        run: |
+          curl --fail "http://localhost:8000/recommend/surprise/1?k=5"
+
+      - name: Stop container
+        run: docker stop reco-container
